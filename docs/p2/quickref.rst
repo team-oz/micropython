@@ -1,3 +1,6 @@
-#p2 quickref.rst file
-Propeller 2 Quick Reference
-22 Oct 2020
+.. _p2_quickref:
+
+Quick reference for the Propeller 2 (P2) port
+=============================================
+
+Command line options
