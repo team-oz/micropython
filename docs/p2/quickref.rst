@@ -1,6 +1,6 @@
 .. _p2_quickref:
 
-Quick reference for the Propeller 2 (P2) port
+Quick reference for the P2 (Propeller 2) port
 =============================================
 
 Command line options
