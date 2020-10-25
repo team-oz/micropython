@@ -30,6 +30,7 @@ This is available as a submodule of the P2 port and should be automatically
 included the first time Make is invoked.  If not, you can try:
 
    git submodule init lib/p2gcc
+
    git submodule update lib/p2gcc
 
 ### LOADP2
