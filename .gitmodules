@@ -36,3 +36,7 @@
 [submodule "lib/nxp_driver"]
 	path = lib/nxp_driver
 	url = https://github.com/hathach/nxp_driver.git
+[submodule "lib/p2gcc"]
+	path = lib/p2gcc
+	url = https://github.com/team-oz/p2gcc.git
+	branch = p2native
