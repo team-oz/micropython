@@ -1,0 +1,14 @@
+s/_prologue_r14/'_prologue_r14 replacement\n\tsub\tsp, #8\n\tmov\tr15, lr\n\tsetq\t#1\n\twrlong\tr14, sp/g
+s/_prologue_r13/'_prologue_r13 replacement\n\tsub\tsp, #12\n\tmov\tr15, lr\n\tsetq\t#2\n\twrlong\tr13, sp/g
+s/_prologue_r12/'_prologue_r12 replacement\n\tsub\tsp, #16\n\tmov\tr15, lr\n\tsetq\t#3\n\twrlong\tr12, sp/g
+s/_prologue_r11/'_prologue_r11 replacement\n\tsub\tsp, #20\n\tmov\tr15, lr\n\tsetq\t#4\n\twrlong\tr11, sp/g
+s/_prologue_r10/'_prologue_r10 replacement\n\tsub\tsp, #24\n\tmov\tr15, lr\n\tsetq\t#5\n\twrlong\tr10, sp/g
+s/_prologue_r9/'_prologue_r9 replacement\n\tsub\tsp, #28\n\tmov\tr15, lr\n\tsetq\t#6\n\twrlong\tr9, sp/g
+s/_prologue_r8/'_prologue_r8 replacement\n\tsub\tsp, #32\n\tmov\tr15, lr\n\tsetq\t#7\n\twrlong\tr8, sp/g
+s/_epilogue_r14/'_epilogue_r14 replacement\n\tsetq\t#1\n\trdlong\tr14, sp\n\tadd\tsp, #8\n\tmov\tlr, r15\n\tjmp\tlr/g
+s/_epilogue_r13/'_epilogue_r13 replacement\n\tsetq\t#2\n\trdlong\tr13, sp\n\tadd\tsp, #12\n\tmov\tlr, r15\n\tjmp\tlr/g
+s/_epilogue_r12/'_epilogue_r12 replacement\n\tsetq\t#3\n\trdlong\tr12, sp\n\tadd\tsp, #16\n\tmov\tlr, r15\n\tjmp\tlr/g
+s/_epilogue_r11/'_epilogue_r11 replacement\n\tsetq\t#4\n\trdlong\tr11, sp\n\tadd\tsp, #20\n\tmov\tlr, r15\n\tjmp\tlr/g
+s/_epilogue_r10/'_epilogue_r10 replacement\n\tsetq\t#5\n\trdlong\tr10, sp\n\tadd\tsp, #24\n\tmov\tlr, r15\n\tjmp\tlr/g
+s/_epilogue_r9/'_epilogue_r9 replacement\n\tsetq\t#6\n\trdlong\tr9, sp\n\tadd\tsp, #28\n\tmov\tlr, r15\n\tjmp\tlr/g
+s/_epilogue_r8/'_epilogue_r8 replacement\n\tsetq\t#7\n\trdlong\tr8, sp\n\tadd\tsp, #32\n\tmov\tlr, r15\n\tjmp\tlr/g

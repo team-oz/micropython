@@ -1,0 +1,1 @@
+s/rdlong\s*lr, sp\s*\n\s*add\s*sp, #4\s*\n\s*rdlong\s*r14, sp\s*\n\s*add\s*sp, #4\s*\n\s*rdlong\s*r13, sp\s*\n\s*add\s*sp, #4\s*\n\s*rdlong\s*r12, sp\s*\n\s*add\s*sp, #4\s*\n\s*rdlong\s*r11, sp\s*\n\s*add\s*sp, #4\s*\n\s*rdlong\s*r10, sp\s*\n\s*add\s*sp, #4\s*\n\s*rdlong\s*r9, sp\s*\n\s*add\s*sp, #4\s*\n\s*rdlong\sr8, sp*\s*\n\s*add\s*sp, #4\s*\n\s*jmp\s*lr/_epilogue_r8/g

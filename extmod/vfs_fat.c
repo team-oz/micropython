@@ -102,10 +102,15 @@ STATIC mp_obj_t fat_vfs_mkfs(mp_obj_t bdev_in) {
     fs_user_mount_t *vfs = MP_OBJ_TO_PTR(fat_vfs_make_new(&mp_fat_vfs_type, 1, 0, &bdev_in));
 
     // make the filesystem
+#ifdef P2GCC_COMPILER
+    uint8_t working_buf[FF_MAX_SS+1];
+    FRESULT res = f_mkfs(&vfs->fatfs, FM_FAT | FM_SFD, 0, working_buf, sizeof(working_buf)-1);
+#else
     uint8_t working_buf[FF_MAX_SS];
     FRESULT res = f_mkfs(&vfs->fatfs, FM_FAT | FM_SFD, 0, working_buf, sizeof(working_buf));
+#endif
     if (res == FR_MKFS_ABORTED) { // Probably doesn't support FAT16
-        res = f_mkfs(&vfs->fatfs, FM_FAT32, 0, working_buf, sizeof(working_buf));
+        res = f_mkfs(&vfs->fatfs, FM_FAT32, 0, working_buf, sizeof(working_buf)-1);
     }
     if (res != FR_OK) {
         mp_raise_OSError(fresult_to_errno_table[res]);
@@ -380,8 +385,13 @@ STATIC mp_obj_t vfs_fat_mount(mp_obj_t self_in, mp_obj_t readonly, mp_obj_t mkfs
     // check if we need to make the filesystem
     FRESULT res = (self->blockdev.flags & MP_BLOCKDEV_FLAG_NO_FILESYSTEM) ? FR_NO_FILESYSTEM : FR_OK;
     if (res == FR_NO_FILESYSTEM && mp_obj_is_true(mkfs)) {
+#ifdef P2GCC_COMPILER
+        uint8_t working_buf[FF_MAX_SS+1];
+        res = f_mkfs(&self->fatfs, FM_FAT | FM_SFD, 0, working_buf, sizeof(working_buf)-1);
+#else
         uint8_t working_buf[FF_MAX_SS];
         res = f_mkfs(&self->fatfs, FM_FAT | FM_SFD, 0, working_buf, sizeof(working_buf));
+#endif
     }
     if (res != FR_OK) {
         mp_raise_OSError(fresult_to_errno_table[res]);

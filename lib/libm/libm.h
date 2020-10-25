@@ -19,6 +19,11 @@
 #include <stdint.h>
 #include <math.h>
 
+#ifdef P2GCC_COMPILER
+typedef int __int32_t;
+typedef unsigned int __uint32_t;
+#endif
+
 #define FLT_EVAL_METHOD 0
 
 #define FORCE_EVAL(x) do {                        \

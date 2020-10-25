@@ -1,0 +1,279 @@
+con
+        rx_pin = 63
+        tx_pin = 62
+        clock_freq = 252_000_000 ' 80000000
+        baud_rate = 115_200
+        lr = $1f6
+        init_stack_ptr = 510*1024 - 32*4
+
+        RXBUFFERSIZE = 2048
+
+
+dat
+        orgh    0
+
+'*******************************************************************************
+'  COG Code
+'*******************************************************************************
+        org
+
+start   jmp     #prefix_setup
+p2start_address
+        long    _p2start
+        long    0
+        long    0
+        long    0
+        long   clock_freq ' 252000000 ' was 80000000 p2clkfreq
+        long    $01103EF8 '   was 19146744 ' p2clkconfig
+        long    baud_rate ' 230400   ' baudrate
+{{
+r0      long    0
+r1      long    0
+r2      long    0
+r3      long    0
+r4      long    0
+r5      long    0
+r6      long    0
+r7      long    0
+r8      long    0
+r9      long    0
+r10     long    0
+r11     long    0
+r12     long    0
+r13     long    0
+r14     long    0
+r15 long    0  ' dummy register only used to hold LR for contigous block transfers
+sp      long    0
+}}
+r15     long    0 ' dummy register only used to hold LR for contigous block transfers
+r14     long    0
+r13     long    0
+r12     long    0
+r11     long    0
+r10     long    0
+r9      long    0
+r8      long    0
+r7      long    0
+r6      long    0
+r5      long    0
+r4      long    0
+r3      long    0
+r2      long    0
+r1      long    0
+r0      long    0
+sp      long    0
+
+temp    long    0
+temp1   long    0
+temp2   long    0
+
+__DIVSI mov     temp, #0
+        abs     r0, r0 wc
+ if_c   mov     temp, #1
+        abs     r1, r1 wc
+ if_c   xor     temp, #1
+        call    #__UDIVSI
+        cmp     temp, #0 wz
+ if_nz  neg     r0, r0
+        ret
+
+'__LONGFILL
+'        wrfast  #0, r0
+'        rep     #1, r2
+'        wflong  r1
+'        ret
+
+__LONGFILL
+        mov     __LONG1, r1
+        shr     __LONG1, #9
+        or      __LONG1, ##$ff800000
+        setd    __LONG2, r1
+        sub     r2, #1
+        setq    r2
+__LONG1 augd    #0
+__LONG2 wrlong  #0, r0
+        ret
+
+__MEMCPY
+        rdbyte  r3, r1
+        wrbyte  r3, r0
+        add     r0, #1
+        add     r1, #1
+        djnz    r2, #__MEMCPY
+        ret
+
+__has_cordic
+        long    0
+
+' Used CORDIC multiply if available
+__MULSI cmp     __has_cordic, #0 wz
+ if_z   jmp     #__MULSI0
+        qmul    r0, r1
+        getqx   r0
+        getqy   r1
+        ret
+' else, do shift and add method
+__MULSI0
+        mov     temp1,#0
+        mov     temp2,#32
+        shr     r0,#1        wc
+__MULSI1
+ if_c   add     temp1,r1     wc
+        rcr     temp1,#1     wc
+        rcr     r0,#1        wc
+        djnz    temp2,#__MULSI1
+        mov     r1, temp1
+        ret
+
+' Used CORDIC divide if available
+__UDIVSI
+        cmp     __has_cordic, #0 wz
+ if_z   jmp     #__UDIVSI0
+        qdiv    r0, r1
+        getqx   r0
+        getqy   r1
+        ret
+' else, do shift and subtract method
+__UDIVSI0
+        mov     temp2,#32
+        mov     temp1,#0
+        cmp     r1, #0       wz
+ if_nz  jmp     #__UDIVSI1
+        mov     r0, #0
+        ret
+__UDIVSI1
+        shr     r1,#1        wcz
+        rcr     temp1,#1
+ if_nz  djnz    temp2,#__UDIVSI1
+__UDIVSI2
+        cmpsub  r0,temp1     wc
+        rcl     r1,#1
+        shr     temp1,#1
+        djnz    temp2,#__UDIVSI2
+        mov     temp1, r1
+        mov     r1, r0
+        mov     r0, temp1
+        ret
+
+__CMPSWAPSI
+        mov     temp1,r0        '' save value to set
+        rdlong  r0,r2           '' fetch original value
+        cmp     r0,r1 wz        '' compare with desired original value
+ if_z   wrlong  temp1,r2        '' if match, save new value
+        ret
+
+        
+__CTZSI    long    __CTZ
+__CLZSI    long    __CLZ
+__CTZ
+        push    __CLZSI_ret  ' put return address on stack when called via CALLD
+        rev     r0
+__CLZ
+        encod   r0 wc
+  if_c  subr    r0, #31
+  if_nc mov     r0, #32
+        ret     wcz
+__CLZSI_ret 
+        long 0 ' return address copied here with JMPRET/CALLD
+
+
+prefix_setup
+                mov     save_r0, r0
+                mov     save_r1, r1
+                cmp     ptra, #0 wz     ' Check if ptra is zero
+    if_z        jmp     #prefix_setup1  ' If zero set sp to init_stack_ptr
+                mov     sp, ptra
+                rdlong  p2start_address, sp
+                add     sp, #4
+                rdlong  r0, sp
+                add     sp, #4
+                jmp     #prefix_setup2
+prefix_setup1
+                drvh    #tx_pin
+                mov     sp, ##init_stack_ptr
+prefix_setup2
+                rdlong  r0, #$18
+                andn    r0, #3  
+                hubset  r0              ' new PLL but in RC fast
+                waitx   ##25000000/100  'delay
+                or      r0, #3
+                hubset  r0              ' enable new PLL clock rate
+                wrpin   #%11111_0, #rx_pin ' set rx async smartpin mode
+                qmul    5, #64          ' get p2 clock freq from patch area above and multiply by 64
+                getqy   r0              ' get upper into r0
+                getqx   r1              ' get lower intr r1
+                setq    r0              ' set top 32 bits of the 64
+                qdiv    r1, 7           ' divide (p2clkfreq * 64) by baud rate
+                getqx   r0              ' get result
+                shl     r0, #10         ' shift up result
+                or      r0, #7          ' configure as 8 data bits
+                wxpin   r0, #rx_pin     ' configure baud rate of smartpin
+                dirh    #rx_pin         ' enable smart pin
+                setse1  #%001_000000 | rx_pin   ' rising edge
+                mov     ijmp2, #rx_isr
+                setint2 #4              ' interrupt on se1 event
+
+                mov     r1, #1
+                qmul    r1, r1
+                getqx   __has_cordic
+                mov     r0, save_r0
+                mov     r1, save_r1
+                calld   lr, p2start_address
+                cogid   r1
+                mov     r2, #0
+                wrlong  r2, r2
+                cogstop r1
+save_r0         long    0
+save_r1         long    0
+
+__rxdata        long    0
+__rxtmp1        long    0
+__rxtmp2        long    0
+__rx_inptr      long    0
+__rx_outptr     long    0
+__rx_overflows  long    0  ' rx buffer overflow statistic
+
+rx_isr  
+                rdpin   __rxdata, #rx_pin
+                getbyte __rxdata, __rxdata, #3          ' extract top byte for serial data
+                mov     __rxtmp1, __rx_inptr
+                incmod  __rxtmp1, ##RXBUFFERSIZE-1
+                cmp     __rxtmp1, __rx_outptr wz  ' check for buffer full
+        if_z    add __rx_overflows, #1 ' count rx overflows
+        if_z    reti2   ' abort receive if full
+                mov     __rxtmp1, __rx_inptr
+                rczr    __rxtmp1                        wcz     ' shift two lower bits into ZC
+                and     __rxtmp1, #$1ff
+                rdlut   __rxtmp2, __rxtmp1
+ if_nc_and_nz   setbyte __rxtmp2, __rxdata, #0          
+ if_nc_and_z    setbyte __rxtmp2, __rxdata, #1
+ if_c_and_nz    setbyte __rxtmp2, __rxdata, #2
+ if_c_and_z     setbyte __rxtmp2, __rxdata, #3
+                wrlut   __rxtmp2, __rxtmp1
+                
+                incmod  __rx_inptr, ##RXBUFFERSIZE-1
+                reti2
+
+__RXCHAR
+                cmp     __rx_inptr, __rx_outptr                 wz
+        if_z    neg     r0, #1
+        if_z    jmp     lr
+      '  if_z    ret     wcz                                 ' return -1 if no data in buffer
+                mov     r0, __rx_outptr
+                rczr    r0                      wcz
+                and     r0, #$1ff
+                rdlut   r0, r0
+ if_nc_and_nz   getbyte r0, r0, #0
+ if_nc_and_z    getbyte r0, r0, #1
+ if_c_and_nz    getbyte r0, r0, #2
+ if_c_and_z     getbyte r0, r0, #3
+                incmod  __rx_outptr, ##RXBUFFERSIZE-1
+                jmp     lr
+               ' ret     wcz                     ' serial data returned in r0
+
+                .fit        
+'*******************************************************************************
+'  Program HUB Code
+'*******************************************************************************
+                orgh    $400
+

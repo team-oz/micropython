@@ -1,0 +1,1 @@
+s/sub\s*sp, #4\s*\n\s*wrlong\s*r13, sp\s*\n\s*sub\s*sp, #4\s*\n\s*wrlong\s*r14, sp\s*\n\s*sub\s*sp, #4\s*\n\s*wrlong\s*lr, sp/_prologue_r13/g

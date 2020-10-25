@@ -1,0 +1,57 @@
+#!/bin/bash
+
+# A simple shell script to replace constant address lookups in .spin2 files with loading
+# the symbol value directly into registers, to optimize translated P1 code in COG mode to
+# make use of more P2 capabilities.
+# July 21 2019  rogloh
+
+#cleanup any remaining temporary/intermediate files kept around for debug, before beginning
+rm -f $1.tempsedfile
+rm -f $1.labels
+rm -f $1.lines
+rm -f $1.sedfile1
+rm -f $1.sedfile2
+
+#extract set of constant labels used with rdlong to a file
+grep ", ##\.LC[0-9]*" $1 | grep rdlong | grep -o "\.LC[0-9]*" | sort | uniq > $1.labels
+
+#locate where each label is defined and save the symbol from the next line as a sed replacement string
+
+for label in `cat $1.labels` ; do  x=`grep -A 1 -w "^\$label" $1 | grep -v "^\." | grep -w long | cut -f2- -d"g" | grep -v "," ` && x="s/##$label[^0-9]/{__SYMBOL__PATCH__} ##${x#"${x%%[![:space:]]*}"}"/g && echo "$x" >> $1.tempsedfile ; done
+
+#only continue if any replacements were found
+if [ -f $1.tempsedfile ]; then
+
+#get rid of excess carriage returns
+    sed -e "s:\r/:/:" $1.tempsedfile > $1.sedfile1
+
+#run sed to replace label with symbol in source file
+    sed -f $1.sedfile1 $1 > $1.out1
+
+#find all lines of the file where all these special symbol patches were applied
+    grep -n "__SYMBOL__PATCH__"  $1.out1 | cut -f1 -d":" > $1.lines
+
+#continue if any changes were made
+    if [ -f $1.lines ]; then
+
+#create another sed file with final rdlong substitutions on each line
+        for line in `cat $1.lines` ; do echo "$line"s:rdlong:mov: >> $1.sedfile2; done
+
+#preserve original file (for debug)
+#        cp $1 $1.orig
+
+#for each line of the file substitute back a mov instruction instead of the rdlong operation 
+        sed -f $1.sedfile2 $1.out1 > $1
+
+#cleanup
+        rm -f $1.out1
+    fi
+fi
+
+#clean up all intermediate files, can comment out lines below to debug
+rm -f $1.lines
+rm -f $1.labels
+rm -f $1.tempsedfile
+rm -f $1.sedfile1
+rm -f $1.sedfile2
+

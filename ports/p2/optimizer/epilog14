@@ -1,0 +1,1 @@
+s/rdlong\s*lr, sp\s*\n\s*add\s*sp, #4\s*\n\s*rdlong\sr14, sp*\s*\n\s*add\s*sp, #4\s*\n\s*jmp\s*lr/_epilogue_r14/g

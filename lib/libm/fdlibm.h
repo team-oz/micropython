@@ -19,8 +19,12 @@
  * is preserved.
  * ====================================================
  */
-
 #include <math.h>
+
+#ifdef P2GCC_COMPILER
+typedef int __int32_t;
+typedef unsigned int __uint32_t;
+#endif
 
 /* Default to XOPEN_MODE.  */
 #define _XOPEN_MODE
