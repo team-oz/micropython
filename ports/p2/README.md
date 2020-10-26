@@ -68,7 +68,7 @@ To enable verbose build output include the V=1 setting when issuing make:
 
 ### Downloading the binary directly to the Propeller 2 MCU
 
-To download and run the executable image and get a basic working REPL you can do this, where <port> is your OS serial port connected to the P2 device, e.g. something like /dev/cu.usbserial-XYZABCDE:
+To download and run the executable image and get a basic working REPL you can do this, where PORT defines your OS serial port connected to the P2 device, e.g. something like /dev/cu.usbserial-XYZABCDE:
 
     $ make PORT=<port> run
 
