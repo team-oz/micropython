@@ -6,7 +6,7 @@ It should build under common OS hosts including Linux, Cygwin, MSYS, Darwin (OS 
 
 ## Prerequisites
 
-This port requires some tools to be installed and available in the working path.
+This port requires some tools to be installed and available in the working path before an image can be built.
 
 ### Propeller GCC Compiler
 
@@ -25,23 +25,27 @@ Note: Under MAC OS X (Yosemite) this compiler can sometimes randomly segfault wi
 
 These tools translate the compiled P1 code into P2 code and then assemble and link.  This tool and library is available as a submodule of the P2 port and should be automatically included the first time make is invoked if it is not already installed.  
 
-To manually install prior to running make, you can try:
+To manually install the p2gcc submodule prior to running make, you can issue this (once):
 
-   $ git submodule init lib/p2gcc
+    $ git submodule update --init lib/p2gcc
 
-   $ git submodule update lib/p2gcc
+Or you can use make itself to do this step (once) prior to building the MicroPython binary:
 
-### LOADP2
+    $ make submodules
 
-An older version of this download utility is included with the P2GCC library, but the newer versions work better and offer more capabilities such as higher baud rates and automatic port detection.  It is available on GitHub here:
+Attempting to make the image without P2GCC submodule installed can result in an error the first time make is called due to not having all files present when rules are determined, however this can be fixed by issuing a second make.
+
+### LOADP2 (optional)
+
+An older version of this download utility is included with the P2GCC library, but the newer version works better and offers more capabilities such as supporting higher baud rates and providing automatic port detection for MAC platforms.  In time this newer tool may be added into the MicroPython build as another submodule but in the meantime if required it is available on GitHub for separate installation here:
 
 https://github.com/totalspectrum/loadp2
 
-You may also use PropTool to download the binary independently if desired, or boot the image from SPI flash once burned.
+You may also use PropTool to download and/or flash the binary independently if desired, or just boot the image directly from SPI flash if you have installed it there after building.
 
 ### Other tools used in the P2 Makefile
 
-git, python, perl, sed, gcc (native C compiler on host OS, used to build P2GCC tools)
+git, python, perl, sed, sh, stat, gcc (native C compiler on host OS, used to build P2GCC tools)
 
 
 ## Building and running MicroPython on a P2
@@ -70,7 +74,11 @@ To download and run the executable image and get a basic working REPL you can do
 
 This will attempt to use the loadp2 tool shipped with P2GCC which is somewhat limited, however with a more recent loadp2 tool nominated you can download to an automatically detected port.   For that you just need to pass the LOADP2 variable into make and assign it to the loadp2 file installed on your system as <file_path_to_loadp2>:
 
-    $ make LOADP2=<file_path_to_loadp2> run
+    $ make LOADP2=<file_path_to_loadp2> PORT=<port> run
+
+You can also specify the options sent to loadp2 with LOADP2_OPTS, overriding the PORT option if that is also specified.
+
+    $ make LOADP2=<file_path_to_loadp2> LOADP2_OPTS=<all_options> run
 
 OR, once built, you can manually download using your loadp2 application and its built-in terminal emulator:
 

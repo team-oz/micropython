@@ -1,8 +1,6 @@
 #BUILD_VERBOSE = 1
 include ../../py/mkenv.mk
 
-CROSS = 1
-
 # qstr definitions (must come before including py.mk)
 QSTR_DEFS = qstrdefsport.h
 
@@ -28,9 +26,9 @@ endif
 # include py core make definitions
 include $(TOP)/py/py.mk
 
-ifeq ($(CROSS), 1)
+GIT_SUBMODULES = lib/p2gcc
+
 CROSS_COMPILE = propeller-elf-
-endif
 
 ifeq ($(BUILD_VERBOSE), 0)
 SILENT = > /dev/null
@@ -48,17 +46,11 @@ INC += -I.
 INC += -I$(TOP)
 INC += -I$(BUILD)
 
-ifeq ($(CROSS), 1)
-DFU = $(TOP)/tools/dfu.py
-PYDFU = $(TOP)/tools/pydfu.py
+#DFU = $(TOP)/tools/dfu.py
+#PYDFU = $(TOP)/tools/pydfu.py
 CFLAGS = $(INC) -Wall -std=c99  $(COPT) -mcog -S -mno-fcache $(CFLAGS_MOD) -m32bit-doubles -DP2GCC_COMPILER
 LD = propeller-elf-gcc
 LDFLAGS = -mxmm -Wl,-Map=$@.map -Wl,--gc-sections
-else
-LD = gcc
-CFLAGS = -m32 $(INC) -Wall -Werror -std=c99 $(COPT)
-LDFLAGS = -m32 -Wl,-Map=$@.map,--cref -Wl,--gc-sections
-endif
 
 # Tune for Debugging or Optimization
 ifeq ($(DEBUG), 1)
@@ -70,8 +62,8 @@ endif
 LIBS =
 
 SRC_C = \
-	main.c \
-	mphalport.c \
+    main.c \
+    mphalport.c \
     moduos.c \
     modmachine.c \
     modutime.c \
@@ -83,11 +75,11 @@ SRC_C = \
     lib/p2gcc/lib/longlong.c \
     lib/p2gcc/lib/float.c \
     lib/p2gcc/lib/p2start.c \
-	lib/utils/printf.c \
-	lib/utils/stdout_helpers.c \
-	lib/utils/pyexec.c \
-	lib/libc/string0.c \
-	lib/mp-readline/readline.c \
+    lib/utils/printf.c \
+    lib/utils/stdout_helpers.c \
+    lib/utils/pyexec.c \
+    lib/libc/string0.c \
+    lib/mp-readline/readline.c \
     lib/oofatfs/ff.c \
     lib/oofatfs/ffunicode.c \
     lib/timeutils/timeutils.c \
@@ -133,20 +125,19 @@ P2GCCTOOLS = \
     $(TOP)/lib/p2gcc/bin/p2dump$(EXE) \
     $(TOP)/lib/p2gcc/bin/loadp2$(EXE) \
 
-# add Loadp2 options if not specified
-LOADP2_OPTS = -b 115200 -p $(PORT) -CHIP -l 230400
+# add some default loadp2 options if not specified
+LOADP2_OPTS ?= -b 115200
+LOADP2 ?= $(TOP)/lib/p2gcc/bin/loadp2$(EXE)
 
-ifndef $(LOADP2)
-LOADP2 = $(TOP)/lib/p2gcc/bin/loadp2 $(LOADP2_OPTS)
+ifneq ($(PORT),)
+    LOADP2_OPTS += -p $(PORT)
 endif
+
+LOADP2TOOL = $(LOADP2)
 
 $(OBJ) : $(SRC_PREFIX) $(P2GCCTOOLS)
 
-ifeq ($(CROSS), 1)
-all: $(BUILD)/python.bin
-else
-all: $(BUILD)/firmware.elf
-endif
+all: $(TOP)/lib/p2gcc/readme.txt $(BUILD)/python.bin
 
 $(BUILD)/_frozen_mpy.c: frozentest.mpy $(BUILD)/genhdr/qstrdefs.generated.h
 	$(ECHO) "MISC freezing bytecode"
@@ -164,16 +155,16 @@ $(TOP)/lib/p2gcc/readme.txt :
 # to make everything, so we will use those for now.
 $(P2GCCTOOLS) : $(TOP)/lib/p2gcc/readme.txt
 ifeq ($(detected_OS), Darwin)
-	(cd $(TOP)/lib/p2gcc && bash build_macos)
+	(cd $(TOP)/lib/p2gcc && sh build_macos)
 endif
 ifeq ($(detected_OS), Linux)
-	(cd $(TOP)/lib/p2gcc && bash build_linux)
+	(cd $(TOP)/lib/p2gcc && sh build_linux)
 endif
 ifeq ($(detected_OS), Cygwin)
-	(cd $(TOP)/lib/p2gcc && bash build_cygwin)
+	(cd $(TOP)/lib/p2gcc && sh build_cygwin)
 endif
 ifeq ($(detected_OS), MSYS)
-	(cd $(TOP)/lib/p2gcc && bash build_mingw)
+	(cd $(TOP)/lib/p2gcc && sh build_mingw)
 endif
 
 
@@ -186,23 +177,16 @@ ifeq ($(detected_OS), Darwin)
 	$(ECHO) "Image size of $@ is `stat -L -f %z $@` bytes"
 endif
 
-$(BUILD)/firmware.bin: $(BUILD)/firmware.elf
-	$(Q)$(OBJCOPY) -O binary -j .isr_vector -j .text -j .data $^ $(BUILD)/firmware.bin
+#TODO: add image flashing tool for P2 port
+#deploy: $(BUILD)/python.bin
+#	$(ECHO) "Writing $< to the board"
+#	$(Q)$(PYTHON) $(PYDFU) -u $<
 
-$(BUILD)/firmware.dfu: $(BUILD)/firmware.bin
-	$(ECHO) "Create $@"
-	$(Q)$(PYTHON) $(DFU) -b 0x08000000:$(BUILD)/firmware.bin $@
-
-deploy: $(BUILD)/firmware.dfu
-	$(ECHO) "Writing $< to the board"
-	$(Q)$(PYTHON) $(PYDFU) -u $<
-
-run: $(BUILD)/python.bin
-	$(LOADP2) -t $^
-#~/Downloads/flexgui-2/bin/loadp2 -t $^
+run: $(BUILD)/python.bin 
+	$(LOADP2TOOL) $(LOADP2_OPTS) -t $^
 
 test: $(BUILD)/python.bin
-	/bin/echo -e "print('hello world!', list(x+1 for x in range(10)), end='eol\\\\n')\\r\\n\\x04" | $(LOADP2) -t $^ | tail -n2 | grep "^hello world! \\[1, 2, 3, 4, 5, 6, 7, 8, 9, 10\\]eol"
+	/bin/echo -e "print('hello world!', list(x+1 for x in range(10)), end='eol\\\\n')\\r\\n\\x04" | $(LOADP2TOOL) $(LOADP2_OPTS) -t $^ | tail -n2 | grep "^hello world! \\[1, 2, 3, 4, 5, 6, 7, 8, 9, 10\\]eol"
 
 # List of sources for qstr extraction
 SRC_QSTR += moduos.c sdcard.c machine_cpu.c modmachine.c modutime.c machine_pin.c
@@ -218,33 +202,33 @@ define compile_c
     $(ECHO) "Compiling $<"
     $(Q)$(CC) $(CFLAGS) -S -MD -o $(@:.o=.spin1) $<
     @$(CP) $(@:.o=.d) $(@:.o=.P); \
-	$(SED) -e 's/#.*//' -e 's/^.*:  *//' -e 's/ *\\$$//' \
+      $(SED) -e 's/#.*//' -e 's/^.*:  *//' -e 's/ *\\$$//' \
       -e '/^$$/ d' -e 's/$$/ :/' < $(@:.o=.d) >> $(@:.o=.P); \
       $(RM) -f $(@:.o=.d)
     $(Q)$(CP) $(@:.o=.spin1) $(@:.o=.spin0)
- 	$(Q)$(ECHO) "Optimizing prologs/epilogs for $(@:.o=.spin1)" $(SILENT)
-	$(Q)$(PERL) -i -0p optimizer/prolog8 $(@:.o=.spin0)
-	$(Q)$(PERL) -i -0p optimizer/prolog9 $(@:.o=.spin0)
-	$(Q)$(PERL) -i -0p optimizer/prolog10 $(@:.o=.spin0)
-	$(Q)$(PERL) -i -0p optimizer/prolog11 $(@:.o=.spin0)
-	$(Q)$(PERL) -i -0p optimizer/prolog12 $(@:.o=.spin0)
-	$(Q)$(PERL) -i -0p optimizer/prolog13 $(@:.o=.spin0)
-	$(Q)$(PERL) -i -0p optimizer/prolog14 $(@:.o=.spin0)
-	$(Q)$(PERL) -i -0p optimizer/epilog8 $(@:.o=.spin0)
-	$(Q)$(PERL) -i -0p optimizer/epilog9 $(@:.o=.spin0)
-	$(Q)$(PERL) -i -0p optimizer/epilog10 $(@:.o=.spin0)
-	$(Q)$(PERL) -i -0p optimizer/epilog11 $(@:.o=.spin0)
-	$(Q)$(PERL) -i -0p optimizer/epilog12 $(@:.o=.spin0)
-	$(Q)$(PERL) -i -0p optimizer/epilog13 $(@:.o=.spin0)
-	$(Q)$(PERL) -i -0p optimizer/epilog14 $(@:.o=.spin0)
+    $(Q)$(ECHO) "Optimizing prologs/epilogs for $(@:.o=.spin1)" $(SILENT)
+    $(Q)$(PERL) -i -0p optimizer/prolog8 $(@:.o=.spin0)
+    $(Q)$(PERL) -i -0p optimizer/prolog9 $(@:.o=.spin0)
+    $(Q)$(PERL) -i -0p optimizer/prolog10 $(@:.o=.spin0)
+    $(Q)$(PERL) -i -0p optimizer/prolog11 $(@:.o=.spin0)
+    $(Q)$(PERL) -i -0p optimizer/prolog12 $(@:.o=.spin0)
+    $(Q)$(PERL) -i -0p optimizer/prolog13 $(@:.o=.spin0)
+    $(Q)$(PERL) -i -0p optimizer/prolog14 $(@:.o=.spin0)
+    $(Q)$(PERL) -i -0p optimizer/epilog8 $(@:.o=.spin0)
+    $(Q)$(PERL) -i -0p optimizer/epilog9 $(@:.o=.spin0)
+    $(Q)$(PERL) -i -0p optimizer/epilog10 $(@:.o=.spin0)
+    $(Q)$(PERL) -i -0p optimizer/epilog11 $(@:.o=.spin0)
+    $(Q)$(PERL) -i -0p optimizer/epilog12 $(@:.o=.spin0)
+    $(Q)$(PERL) -i -0p optimizer/epilog13 $(@:.o=.spin0)
+    $(Q)$(PERL) -i -0p optimizer/epilog14 $(@:.o=.spin0)
     $(Q)$(SED) -f optimizer/transforms_rev.sed $(@:.o=.spin0) > $(@:.o=.spin1)
     $(Q)$(RM) -f $(@:.o=.spin0)
- 	$(Q)$(ECHO) "Translating $(@:.o=.spin1) into SPIN2" $(SILENT)
-	$(Q)$(P2GCC)/s2pasm -p $(SRC_PREFIX) $(@:.o=.spin1)
- 	$(Q)$(ECHO) "Optimizing constants for $(@:.o=.spin2)" $(SILENT)
+    $(Q)$(ECHO) "Translating $(@:.o=.spin1) into SPIN2" $(SILENT)
+    $(Q)$(P2GCC)/s2pasm -p $(SRC_PREFIX) $(@:.o=.spin1)
+    $(Q)$(ECHO) "Optimizing constants for $(@:.o=.spin2)" $(SILENT)
     $(Q)optimizer/optimize $(@:.o=.spin2)
- 	$(Q)$(ECHO) "Assembling $(@:.o=.spin2)" $(SILENT)
-	$(Q)$(P2GCC)/p2asm -c -o -hub $(@:.o=.spin2)
+    $(Q)$(ECHO) "Assembling $(@:.o=.spin2)" $(SILENT)
+    $(Q)$(P2GCC)/p2asm -c -o -hub $(@:.o=.spin2)
     $(Q)$(RM) -f $(@:.o=.lst)
     $(Q)$(RM) -f $(@:.o=.bin)
     $(Q)$(RM) -f $(@:.o=.spin1)
@@ -253,10 +237,10 @@ endef
 
 # Define how to build SPIN2 files
 define compile_spin
- 	$(ECHO) "Compiling $<" 
+    $(ECHO) "Compiling $<"
     $(Q)$(CP) $< $(@:.o=.spin2)
- 	$(Q)$(ECHO) "Assembling $(@:.o=.spin2)" $(SILENT)
-	$(Q)$(P2GCC)/p2asm -o $(1) $(@:.o=.spin2)
+    $(Q)$(ECHO) "Assembling $(@:.o=.spin2)" $(SILENT)
+    $(Q)$(P2GCC)/p2asm -o $(1) $(@:.o=.spin2)
     $(Q)$(RM) -f $(@:.o=.spin2)
     $(Q)$(RM) -f $(@:.o=.lst)
     $(Q)$(RM) -f $(@:.o=.bin)
