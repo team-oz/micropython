@@ -39,6 +39,7 @@ The :mod:'p2' module::
     import p2
     
 Basic Pins and GPIO
+-------------------
 
 See machine.Pin.
 
@@ -53,6 +54,7 @@ See machine.Pin.
     p_in.value() # get value, 0 or 1
     
 Basic DAC (digital to analog conversion)
+----------------------------------------
 
 See machine.DAC.
 
@@ -62,14 +64,23 @@ See machine.DAC.
     
 
 Smart Pins
+==========
 
 Every P2 can perform a wide variety of automated functions indepenently, such as ADC, PWM, UART
 
-See machine.Pin.
-
 ADC (analog to digital conversion)
+----------------------------------
 
 See machine.ADC.
 
+PWM (pulse width modulation)
+----------------------------
+
+See machine.PWM
+
+UART (serial bus)
+-----------------
+
+See machine.debug
 
 
