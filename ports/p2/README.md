@@ -1,75 +1,84 @@
-# The Propeller 2 native port
+# The Propeller 2 native port of MicroPython
 
-This MicroPython port runs natively on the Propeller 2 MCU.
+This MicroPython port now runs natively on the Propeller 2 MCU.
 
-It should build under common OS hosts including Linux, Cygwin, Darwin (OS X).
+It should build under common OS hosts including Linux, Cygwin, MSYS, Darwin (OS X).
 
 ## Prerequisites
 
-This port requires some tools installed and available in the working path.
+This port requires some tools to be installed and available in the working path.
 
 ### Propeller GCC Compiler
 
 You will require propeller-elf-gcc and its include files.
 
-This is a GCC Compiler for Propeller 1 chip, code will be translated for the P2.
+This is a GCC Compiler for the Propeller 1 chip, the assembly code generated will be translated for the P2.
 
 This build was tested with GCC version 4.6.1
 
-You may find information here:
+You may find information here regarding this tool:
 https://github.com/parallaxinc/propgcc
 
-Note: Under MAC OS X (Yosemite) this compiler can sometimes randomly segfault with an
-internal compiler error.  If this happens, just re-invoke make to continue 
-where the build left off.
+Note: Under MAC OS X (Yosemite) this compiler can sometimes randomly segfault with an internal compiler error.  If this happens, just re-invoke make to continue where the build left off.
 
 ### P2GCC
 
-These tools translate the compiled P1 code into P2 code and assemble and link.
-This is available as a submodule of the P2 port and should be automatically 
-included the first time Make is invoked.  If not, you can try:
+These tools translate the compiled P1 code into P2 code and then assemble and link.  This tool and library is available as a submodule of the P2 port and should be automatically included the first time make is invoked if it is not already installed.  
 
-   git submodule init lib/p2gcc
+To manually install prior to running make, you can try:
 
-   git submodule update lib/p2gcc
+   $ git submodule init lib/p2gcc
+
+   $ git submodule update lib/p2gcc
 
 ### LOADP2
 
-An older version is included with the P2GCC library, but the newer versions work
-better and offer more capabililities such as higher baud rates and automatic
-port detection.  
-
-It is available on github here:
+An older version of this download utility is included with the P2GCC library, but the newer versions work better and offer more capabilities such as higher baud rates and automatic port detection.  It is available on GitHub here:
 
 https://github.com/totalspectrum/loadp2
 
-You may also use PropTool to download the binary.
+You may also use PropTool to download the binary independently if desired, or boot the image from SPI flash once burned.
 
 ### Other tools used in the P2 Makefile
 
-perl, sed, gcc (native C compiler on host OS, used to build P2GCC tools)
+git, python, perl, sed, gcc (native C compiler on host OS, used to build P2GCC tools)
 
 
 ## Building and running MicroPython on a P2
 
-By default the port will be built for the P2 machine:
+By default when running make with no targets the port will be built for the P2 machine when make is invoved from the ports/p2 folder:
 
     $ make
 
+### Target image
+
+The default target binary generated is:
+
+    build/python.bin
 
 ### Verbose output
 
-To enable verbose output include the V=1 setting with make:
+To enable verbose build output include the V=1 setting when issuing make:
 
     $ make V=1
 
+### Downloading the binary directly to the Propeller 2 MCU
+
+To download and run the executable image and get a basic working REPL you can do this, where <port> is your OS serial port connected to the P2 device, e.g. something like /dev/cu.usbserial-XYZABCDE:
+
+    $ make PORT=<port> run
+
+This will attempt to use the loadp2 tool shipped with P2GCC which is somewhat limited, however with a more recent loadp2 tool nominated you can download to an automatically detected port.   For that you just need to pass the LOADP2 variable into make and assign it to the loadp2 file installed on your system as <file_path_to_loadp2>:
+
+    $ make LOADP2=<file_path_to_loadp2> run
+
+OR, once built, you can manually download using your loadp2 application and its built-in terminal emulator:
+
+    $ loadp2 -t build/python.bin
+
+The default operating serial port baud setting used by this image is 115200 N81.
+
 ## Build information
-
-### Target image
-
-The default target binary is:
-
-    build/python.bin
 
 ### Debug files
 
@@ -79,22 +88,15 @@ Other files are created during the build and are available for debugging:
     build/python.map - image symbol information
     build/python.lss - disassembled output of binary image
 
-## Downloading the binary directly to the Propeller 2 MCU
+### Customizing MicroPython
 
-To download and run the executable image and get a basic working REPL do this:
+The mpconfigport.h file allows further customization of MicroPython features.
 
-    $ make PORT=<port> run
+### Baud rate, initial stack location, default operating frequency
 
-    where <port> is your OS serial port, e.g /dev/cu.usbserial-XYZABCDE etc
+Start up settings are defined in prefix.spin2 prefix file in the ports/p2 folder.  Right now the processor frequency and baud rate is not adjustable after boot, however this could be added in the future.
 
-This will attempt to use the loadp2 tool shipped with P2GCC which is limited,
-with a recent loadp2 tool nominated you can download to an automatically detected port:
+### MicroPython Heap Size
 
-    $ make LOADP2=<file_path_to_loadp2> run
-
-       OR, once built
-
-    $ loadp2 -t build/python.bin
-
-The default operating serial port baud setting used by this image is 115200 N81.
+The size of the MicroPython heap is currently defined in main.c using the HEAP_SIZE_KB parameter.  Care must be taken to not make it too large such that it exceeds the Propeller 2 MCU 512kB internal memory limit after accounting for a sufficient MicroPython stack and any other HUB memory use outside of MicroPython.
 
