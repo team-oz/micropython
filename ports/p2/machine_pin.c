@@ -160,7 +160,7 @@ gpio_num_t machine_pin_get_id(mp_obj_t pin_in) {
 
 STATIC void machine_pin_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
     machine_pin_obj_t *self = self_in;
-    mp_printf(print, "Pin(%u)Mode(%u) wx=%u wy=%u wr=%u", self->id, (self->mode), self->x, self->y, self->r);
+    mp_printf(print, "Pin(%u)Mode(%u)(wx=%u wy=%u wr=%u)", self->id, (self->mode), self->x, self->y, self->r);
 }
 
 // pin.init(mode, pull=None, *, value)
@@ -193,25 +193,25 @@ STATIC mp_obj_t machine_pin_obj_init_helper(machine_pin_obj_t *self, size_t n_ar
 
     // set initial output bit value if specified (do this before configuring mode pull up/down)
     if (args[ARG_value].u_obj != MP_OBJ_NULL) {
-        printf("value parameter specified for pin %u\n", (uint32_t)self->id);
+        //printf("value parameter specified for pin %u\n", (uint32_t)self->id);
         gpio_set_latch(self->id, mp_obj_is_true(args[ARG_value].u_obj));
     }
 
     // configure optional pull up or pull down
     if (args[ARG_pull].u_obj != MP_OBJ_NEW_SMALL_INT(-1)) {
-        printf("pullup parameter specified\n");
+        //printf("pullup parameter specified\n");
         // a pullup or pulldown argument was specified
         int pullmode = -1;
         if (args[ARG_pull].u_obj != mp_const_none) {
             pullmode = mp_obj_get_int(args[ARG_pull].u_obj);
-            printf("pullup parameter specified as %d\n", (uint32_t)pullmode);
+            //printf("pullup parameter specified as %d\n", (uint32_t)pullmode);
             if (pullmode < 0 || pullmode > GPIO_PULL_UP_FLOAT) {
                 mp_raise_ValueError(MP_ERROR_TEXT("Expecting a valid pin pullup/pulldown value"));
             }
             // configure based on pin mode (in/output/od)
             switch(pin_io_mode) {
             case GPIO_MODE_INPUT:
-                printf("setting input %u\n", (uint32_t)pullmode);
+                //printf("setting input %u\n", (uint32_t)pullmode);
                 if (pullmode > GPIO_PULL_DOWN_FLOAT) { // a pullup was specified
                     gpio_set_latch(self->id, 1); // setup output high when enabled
                     self->r = (mp_uint_t)(pullmode-GPIO_PULL_UP_FAST) << 11;
@@ -223,7 +223,7 @@ STATIC mp_obj_t machine_pin_obj_init_helper(machine_pin_obj_t *self, size_t n_ar
                 pin_io_mode = GPIO_MODE_INPUT_OUTPUT; // override to drive output
                 break;
             case GPIO_MODE_INPUT_OUTPUT:
-                printf("setting input/output %u\n", (uint32_t)pullmode);
+                //printf("setting input/output %u\n", (uint32_t)pullmode);
                 if (pullmode > GPIO_PULL_DOWN_FLOAT) { // a pullup was specified
                     self->r = (mp_uint_t)(pullmode-GPIO_PULL_UP_FAST) << 11;
                 }
@@ -232,7 +232,7 @@ STATIC mp_obj_t machine_pin_obj_init_helper(machine_pin_obj_t *self, size_t n_ar
                 }
                 break;
             case GPIO_MODE_INPUT_OUTPUT_OD: // open drain output mode
-                printf("setting input/output OD %u\n", (uint32_t)pullmode);
+                //printf("setting input/output OD %u\n", (uint32_t)pullmode);
                 if (pullmode > GPIO_PULL_DOWN_FLOAT) { // a pullup was specified
                     self->r = (mp_uint_t)(pullmode-GPIO_PULL_UP_FAST) << 11;
                 }
@@ -243,24 +243,24 @@ STATIC mp_obj_t machine_pin_obj_init_helper(machine_pin_obj_t *self, size_t n_ar
             }
         }
         else  { // pullup/pulldown option was listed as None
-            printf("pullup parameter specified as None\n");
+            //printf("pullup parameter specified as None\n");
             if (pin_io_mode == GPIO_MODE_INPUT_OUTPUT_OD) {
                 self->r = P_HIGH_FLOAT; // default as as full open drain without pullup
             }
         }
     }
     else { // no pullup/pulldown argument supplied
-        printf("No pullup parameter specified \n");
+        //printf("No pullup parameter specified \n");
         if (pin_io_mode == GPIO_MODE_INPUT_OUTPUT_OD) {
             self->r = P_HIGH_FLOAT; // default as as full open drain without pullup
         }
     }
     if (self->r) { // we had pullup/pulldown requirements
-        printf("Writing WRPIN %u to %u\n", (uint32_t)self->id, (uint32_t)self->r);
+        //printf("Writing WRPIN %u to %u\n", (uint32_t)self->id, (uint32_t)self->r);
         gpio_wrpin(self->id, self->r);
     }
     // enable pin as input/output
-    printf("Setting direction to %u\n", (uint32_t)pin_io_mode);
+    //printf("Setting direction to %u\n", (uint32_t)pin_io_mode);
     gpio_set_direction(self->id, pin_io_mode); 
     self->mode = pin_io_mode; 
 
@@ -396,7 +396,7 @@ mp_obj_t machine_pin_start(size_t n_args, const mp_obj_t *args) {
     gpio_wrpin(self->id, self->r);
     gpio_set_direction(self->id, 1); // dir=1
     self->mode = GPIO_MODE_INPUT_OUTPUT; // treat as input output pin
-    printf("SmartPin(%u)Mode(%u) wx=%08x wy=%08x wr=%08x\n", (uint32_t)self->id, (uint32_t)(self->mode), (uint32_t)self->x, (uint32_t)self->y, (uint32_t)self->r);
+    //printf("SmartPin(%u)Mode(%u) wx=%08x wy=%08x wr=%08x\n", (uint32_t)self->id, (uint32_t)(self->mode), (uint32_t)self->x, (uint32_t)self->y, (uint32_t)self->r);
     return mp_const_none; 
 }   
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(machine_pin_start_obj, 2, 4, machine_pin_start);
@@ -435,7 +435,7 @@ mp_obj_t machine_pin_wrpin(size_t n_args, const mp_obj_t *args) {
         return mp_obj_new_int_from_uint(self->r);
     }
     self->r = mp_obj_get_int_truncated(args[1]);
-    gpio_wypin(self->id, self->r);
+    gpio_wrpin(self->id, self->r);
     return mp_const_none; 
 }   
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(machine_pin_wrpin_obj, 1, 2, machine_pin_wrpin);
