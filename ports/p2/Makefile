@@ -101,6 +101,7 @@ SRC_C = \
     lib/libm/ef_rem_pio2.c \
     lib/libm/kf_rem_pio2.c \
     lib/libm/sf_ldexp.c \
+    drivers/bus/softspi.c \
     $(BUILD)/_frozen_mpy.c \
     $(SRC_MOD) \
 
@@ -169,13 +170,14 @@ endif
 
 
 $(BUILD)/python.bin: $(OBJ)
-	$(ECHO) "Detected OS is $(detected_OS)"
 	$(ECHO) "Linking $^"
 	$(Q)$(P2GCC)/p2link -d -v -o $@ -m $(@:.bin=.map) $^ >$(@:.bin=.linker)
 	$(Q)$(P2GCC)/p2dump -dis -data -asc $@ > $(@:.bin=.lss)
 ifeq ($(detected_OS), Darwin)
+	$(ECHO) "Detected OS is $(detected_OS)"
 	$(ECHO) "Image size of $@ is `stat -L -f %z $@` bytes"
 endif
+#still need other stat versions for other platforms to figure out file size (TBD)
 
 #TODO: add image flashing tool for P2 port
 #deploy: $(BUILD)/python.bin

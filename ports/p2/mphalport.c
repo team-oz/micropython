@@ -100,7 +100,7 @@ mp_uint_t mp_hal_ticks_us(void)
     __asm__("getct r1");
 
     __asm__("rdlong r2, #$14"); // system clock freq at address $14
-    __asm__("qdiv r2, ##1000000"); // determine clocks per millisecond
+    __asm__("qdiv r2, ##1000000"); // determine clocks per microsecond
     __asm__("getqx r2");
     __asm__("setq r0");
     __asm__("qdiv r1, r2"); // divide system counter by (clocks per usec)

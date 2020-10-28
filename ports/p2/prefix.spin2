@@ -1,9 +1,12 @@
 con
         rx_pin = 63
         tx_pin = 62
-        clock_freq = 252_000_000 ' 80000000
-        baud_rate = 115_200
+        clock_freq = 252_000_000
+        clock_mode  = $01103EF8
+        baud_rate  = 115_200
+
         lr = $1f6
+
         init_stack_ptr = 510*1024 - 32*4
 
         RXBUFFERSIZE = 2048
@@ -23,28 +26,9 @@ p2start_address
         long    0
         long    0
         long    0
-        long   clock_freq ' 252000000 ' was 80000000 p2clkfreq
-        long    $01103EF8 '   was 19146744 ' p2clkconfig
-        long    baud_rate ' 230400   ' baudrate
-{{
-r0      long    0
-r1      long    0
-r2      long    0
-r3      long    0
-r4      long    0
-r5      long    0
-r6      long    0
-r7      long    0
-r8      long    0
-r9      long    0
-r10     long    0
-r11     long    0
-r12     long    0
-r13     long    0
-r14     long    0
-r15 long    0  ' dummy register only used to hold LR for contigous block transfers
-sp      long    0
-}}
+        long    clock_freq
+        long    clock_mode
+        long    baud_rate
 r15     long    0 ' dummy register only used to hold LR for contigous block transfers
 r14     long    0
 r13     long    0

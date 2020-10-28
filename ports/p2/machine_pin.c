@@ -59,11 +59,6 @@
 #define GPIO_PULL_UP   (GPIO_PULL_UP_1K5)
 #define GPIO_PULL_DOWN (GPIO_PULL_DOWN_1K5) 
 
-// GPIO pin mode types
-#define GPIO_MODE_INPUT (0)
-#define GPIO_MODE_INPUT_OUTPUT (1)
-#define GPIO_MODE_INPUT_OUTPUT_OD (2)
-
 typedef struct _machine_pin_obj_t {
     mp_obj_base_t base;
     mp_uint_t id;
@@ -147,16 +142,13 @@ void machine_pins_init(void) {
 void machine_pins_deinit(void) {
 }
 
-
-#if 0
-gpio_num_t machine_pin_get_id(mp_obj_t pin_in) {
+mp_uint_t machine_pin_get_id(mp_obj_t pin_in) {
     if (mp_obj_get_type(pin_in) != &machine_pin_type) {
         mp_raise_ValueError(MP_ERROR_TEXT("expecting a pin"));
     }
     machine_pin_obj_t *self = pin_in;
     return self->id;
 }
-#endif
 
 STATIC void machine_pin_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
     machine_pin_obj_t *self = self_in;
@@ -449,6 +441,8 @@ STATIC mp_obj_t machine_pin_ack(mp_obj_t self_in) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(machine_pin_ack_obj, machine_pin_ack);
 
 #if 0
+//TODO: I can't seem to get attributes working. I want to report x,y,r as attributes
+//      instead of reading back data with wrpin(), wxpin(), wypin() which is wrong (rogloh)
 STATIC void machine_pin_attr(mp_obj_t self_in, qstr attribute, mp_obj_t *destination) {
     machine_pin_obj_t *self = MP_OBJ_TO_PTR(self_in);
     if (destination[0] != MP_OBJ_NULL) {
