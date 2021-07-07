@@ -1,3 +1,7 @@
+This version (1.13) is the currently used version of MicroPython on the Parallax Propeller P2.   Since we released it on Dec 13, 2020, there have been a rapid number of new releases of the main upstream MicroPython repsitory. We are planning on merging them, but right now our attention is on connecting peripherals.  There is useful code for Soft I2C and SPI testing in the P2Native branch. 
+
+If you have questions, please post them on [Parallax Forum](https://forums.parallax.com/)
+
 [![Build Status](https://travis-ci.com/micropython/micropython.png?branch=master)](https://travis-ci.com/micropython/micropython) [![Coverage Status](https://coveralls.io/repos/micropython/micropython/badge.png?branch=master)](https://coveralls.io/r/micropython/micropython?branch=master)
 
 The MicroPython project
